@@ -1,0 +1,22 @@
+# Rust Toolchain Konfiguration
+# Pinnt Rust-Version und Components für reproduzierbare Builds
+
+[toolchain]
+# Channel: stable, beta oder nightly
+# "stable" = Stabile Rust-Version (empfohlen für Production)
+channel    = "stable"
+
+# Components: Zusätzliche Rust-Komponenten
+# "rust-src" = Rust Standard-Library Quellcode
+#              Benötigt für "build-std" in .cargo/config.toml
+#              Ermöglicht Neucompilieren von core für Target-Optimierungen
+components = ["rust-src"]
+
+# Targets: Vorinstallierte Compilation-Targets
+# "riscv32imac-unknown-none-elf" = RISC-V 32-bit für ESP32-C6
+#   - riscv32: 32-bit RISC-V Architektur
+#   - imac: Integer/Multiply/Atomic/Compressed Extensions
+#   - unknown: Kein spezifisches OS
+#   - none: Bare-Metal (kein OS)
+#   - elf: ELF Binary-Format
+targets = ["riscv32imac-unknown-none-elf"]

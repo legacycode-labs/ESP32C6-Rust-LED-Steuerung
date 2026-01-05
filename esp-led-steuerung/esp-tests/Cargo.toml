@@ -1,0 +1,12 @@
+[package]
+name = "esp-tests"
+version = "1.0.0"
+edition = "2024"
+
+[dependencies]
+esp-core = { path = "../esp-core" }
+rgb = { workspace = true }
+
+[[test]]
+name = "led_tests"
+path = "tests/led_tests.rs"

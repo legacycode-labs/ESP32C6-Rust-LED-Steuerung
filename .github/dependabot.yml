@@ -1,0 +1,17 @@
+version: 2
+updates:
+  - package-ecosystem: "cargo"
+    directory: "/esp-led-steuerung/esp-core"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "rust"
+
+  - package-ecosystem: "cargo"
+    directory: "/esp-led-steuerung/esp-tests"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "rust"

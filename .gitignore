@@ -1,0 +1,8 @@
+# Windows Zone.Identifier Dateien (werden beim Download erstellt)
+*:Zone.Identifier
+
+# IntelliJ / RustRover
+.idea/
+
+# Claude Code settings
+.claude/

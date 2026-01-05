@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32-C6 LED Controller</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <style>
+        #led-visual {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto;
+            transition: all 0.3s ease;
+        }
+        button {
+            min-height: 44px;
+            font-size: 1rem;
+        }
+        @media (max-width: 576px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            #led-visual {
+                width: 100px;
+                height: 100px;
+            }
+        }
+        header p {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body x-data="ledApp()" :data-theme="theme" x-init="init()">
+    <main class="container">
+        <article>
+            <header>
+                <h1>🔆 LED Controller</h1>
+                <p>
+                    <small x-text="wsStatus">Verbinde...</small>
+                    <button @click="toggleTheme()" class="secondary outline">
+                        <span x-text="theme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode'"></span>
+                    </button>
+                </p>
+            </header>
+            <section>
+                <h2>LED Status</h2>
+                <div id="led-visual"
+                     :style="`background-color: rgb(${led.r * 25}, ${led.g * 25}, ${led.b * 25}); box-shadow: 0 0 20px rgba(${led.r * 25}, ${led.g * 25}, ${led.b * 25}, 0.6), 0 0 40px rgba(${led.r * 25}, ${led.g * 25}, ${led.b * 25}, 0.4), 0 0 60px rgba(${led.r * 25}, ${led.g * 25}, ${led.b * 25}, 0.2)`">
+                </div>
+                <p style="text-align: center; margin-top: 1rem;">
+                    <strong x-text="led.name">Warte auf Verbindung...</strong><br>
+                    <small x-text="led.mode === 'auto' ? '(Auto-Modus)' : '(Manuell)'"></small>
+                </p>
+            </section>
+            <section>
+                <h2>Steuerung</h2>
+                <div class="grid">
+                    <button @click="setColor('Rot')" :disabled="!wsConnected">🔴 Rot</button>
+                    <button @click="setColor('Grün')" :disabled="!wsConnected">🟢 Grün</button>
+                    <button @click="setColor('Blau')" :disabled="!wsConnected">🔵 Blau</button>
+                    <button @click="setMode('auto')" :disabled="!wsConnected" class="contrast">⚡ Auto-Modus</button>
+                </div>
+            </section>
+            <footer>
+                <small>WebSocket: <span x-text="wsConnected ? '✅ Verbunden' : '❌ Getrennt'"></span></small>
+            </footer>
+        </article>
+    </main>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+    <script>
+        function ledApp() {
+            return {
+                theme: localStorage.getItem('theme') || 'light',
+                led: { r: 0, g: 0, b: 0, name: 'Warte auf Verbindung...', mode: 'auto' },
+                ws: null,
+                wsConnected: false,
+                wsStatus: 'Verbinde...',
+                reconnectAttempts: 0,
+                reconnectTimer: null,
+                init() {
+                    this.connectWebSocket();
+                },
+                toggleTheme() {
+                    this.theme = this.theme === 'light' ? 'dark' : 'light';
+                    localStorage.setItem('theme', this.theme);
+                },
+                connectWebSocket() {
+                    const wsUrl = 'ws://' + location.hostname + '/ws';
+                    this.wsStatus = 'Verbinde...';
+                    try {
+                        this.ws = new WebSocket(wsUrl);
+                        this.ws.onopen = () => {
+                            this.wsConnected = true;
+                            this.wsStatus = 'Verbunden';
+                            this.reconnectAttempts = 0;
+                            console.log('WebSocket verbunden');
+                        };
+                        this.ws.onmessage = (event) => {
+                            try {
+                                const data = JSON.parse(event.data);
+                                if (data.type === 'status') {
+                                    this.led = { r: data.rgb.r, g: data.rgb.g, b: data.rgb.b, name: data.color, mode: data.mode };
+                                } else if (data.type === 'error') {
+                                    console.error('Server Error:', data.message);
+                                }
+                            } catch (e) {
+                                console.error('JSON Parse Error:', e);
+                            }
+                        };
+                        this.ws.onerror = (error) => {
+                            console.error('WebSocket Error:', error);
+                            this.wsStatus = 'Verbindungsfehler';
+                        };
+                        this.ws.onclose = () => {
+                            this.wsConnected = false;
+                            this.wsStatus = 'Getrennt';
+                            console.log('WebSocket getrennt');
+                            this.scheduleReconnect();
+                        };
+                    } catch (e) {
+                        console.error('WebSocket Verbindung fehlgeschlagen:', e);
+                        this.scheduleReconnect();
+                    }
+                },
+                scheduleReconnect() {
+                    if (this.reconnectTimer) {
+                        clearTimeout(this.reconnectTimer);
+                    }
+                    const delay = Math.min(10000, 1000 * Math.pow(2, this.reconnectAttempts));
+                    this.reconnectAttempts++;
+                    this.wsStatus = `Reconnect in ${delay/1000}s...`;
+                    this.reconnectTimer = setTimeout(() => {
+                        this.connectWebSocket();
+                    }, delay);
+                },
+                setColor(color) {
+                    if (this.ws && this.wsConnected) {
+                        this.ws.send(JSON.stringify({ type: 'set_color', color: color }));
+                    }
+                },
+                setMode(mode) {
+                    if (this.ws && this.wsConnected) {
+                        this.ws.send(JSON.stringify({ type: 'set_mode', mode: mode }));
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>

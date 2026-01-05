@@ -1,0 +1,126 @@
+# Projekt-Metadaten
+[package]
+edition = "2024"        # Rust Edition 2024 (neueste Features)
+name = "esp-led-steuerung" # Projektname
+rust-version = "1.91"   # Mindest-Rust-Version (rust-mqtt requirement)
+version = "1.0.0"       # Projekt-Version (SemVer)
+
+# Binary-Konfiguration
+[[bin]]
+name = "esp-led-steuerung"    # Name der ausführbaren Datei
+path = "./src/bin/main.rs" # Pfad zur main.rs
+
+# Dependencies (Abhängigkeiten)
+[dependencies]
+# ESP Core - Platform-agnostic Traits and Logic
+esp-core = { path = "../esp-core", features = ["defmt"] }
+
+# ESP32-C6 Hardware Abstraction Layer (HAL) - Kern-Bibliothek
+esp-hal = { version = "~1.0", features = [
+  "defmt",    # defmt Logging-Support
+  "esp32c6",  # ESP32-C6 spezifische Features
+  "unstable", # Experimentelle/neueste Features (für RMT, etc.)
+] }
+
+# defmt - Effizientes binäres Logging-Framework
+defmt = "1.0.1"
+
+# ESP-IDF Bootloader Integration - WICHTIG!
+# Fügt App-Descriptor hinzu, ohne den das Flashen fehlschlägt
+esp-bootloader-esp-idf = { version = "0.4.0", features = ["defmt", "esp32c6"] }
+
+# Critical Section - für Thread-sichere Operationen
+critical-section = "1.2.0"
+
+# Backtrace Support bei Panic (Stack-Trace Ausgabe)
+esp-backtrace = { version = "0.18.1", features = [
+  "defmt",         # defmt Integration
+  "esp32c6",       # ESP32-C6 Support
+  "panic-handler", # Automatischer Panic-Handler
+] }
+
+# println!() Makro Support via defmt
+esp-println = { version = "0.16.1", features = ["defmt-espflash", "esp32c6"] }
+
+# SmartLED Support (WS2812/Neopixel RGB LEDs)
+rgb = "0.8.52"             # RGB8 Farb-Typ
+smart-leds-trait = "0.3.2" # SmartLedsWrite Trait
+
+# Embassy Async Runtime
+esp-rtos = { version = "0.2.0", features = [
+  "embassy",
+  "esp-alloc",
+  "esp-radio",
+  "esp32c6",
+] }
+embassy-executor = "0.9.1"
+embassy-time = "0.5.0"
+embassy-sync = "0.7.2"
+embassy-futures = "0.1.2"
+static_cell = "2.1.1"
+
+# WiFi & Networking
+esp-alloc = "0.9.0" # Heap Allocator (WiFi braucht dynamischen Speicher)
+esp-radio = { version = "0.17.0", features = [
+  "esp-alloc",
+  "esp32c6",
+  "smoltcp",
+  "unstable",
+  "wifi",
+] }
+embassy-net = { version = "0.7.1", features = [
+  "dhcpv4",
+  "dns",
+  "medium-ethernet",
+  "tcp",
+  "udp",
+] }
+smoltcp = { version = "0.12.0", default-features = false, features = [
+  "medium-ethernet",
+  "multicast",
+  "proto-dhcpv4",
+  "proto-dns",
+  "proto-ipv4",
+  "socket-dns",
+  "socket-icmp",
+  "socket-tcp",
+  "socket-udp",
+] }
+rust-mqtt = { version = "0.3.0", default-features = false }
+
+# HTTP Server & WebSocket
+picoserve = { version = "0.17.1", features = ["alloc", "embassy", "ws"] }
+serde = { version = "1.0.228", default-features = false, features = ["derive", "alloc"] }
+serde-json-core = "0.6.0"
+heapless = "0.9.2"
+edge-nal = "0.5.0"
+edge-mdns = { version = "0.6.1", features = ["defmt"] }
+edge-nal-embassy = { version = "0.7.0", features = ["defmt"] }
+
+# ESP-HAL SmartLED Adapter - verbindet RMT Peripheral mit SmartLEDs
+# Git-Repo (noch nicht auf crates.io), spezifischer Commit für ESP32-C6 Support
+[dependencies.esp-hal-smartled]
+git = "https://github.com/esp-rs/esp-hal-community.git"
+rev = "8a8734c22b6ce572bc5ee39a101c805ff5a19625"
+version = "0.17.0"
+features = ["esp32c6"]
+
+# Build-Dependencies (nur zur Build-Zeit benötigt)
+[build-dependencies]
+dotenvy = "0.15.7" # Lädt .env file für WiFi-Credentials
+
+# Build-Profile für Development (cargo build)
+[profile.dev]
+# ESP32 hat wenig Flash - selbst Debug-Builds müssen optimiert sein
+# "s" = optimize for size (Größe), nicht Speed
+opt-level = "s"
+
+# Build-Profile für Release (cargo build --release)
+[profile.release]
+codegen-units = 1        # Keine Parallelisierung → bessere Optimierung
+debug = 2                # Debug-Symbole einbetten (für Backtrace)
+debug-assertions = false # Assertions deaktivieren (schneller)
+incremental = false      # Kein inkrementelles Kompilieren (bessere Optimierung)
+lto = 'fat'              # Link-Time Optimization über alle Crates
+opt-level = 's'          # Optimiere für Größe (wichtig bei 8 MB Flash!)
+overflow-checks = false  # Integer-Overflow-Checks deaktivieren (schneller)

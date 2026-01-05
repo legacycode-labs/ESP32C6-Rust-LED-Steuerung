@@ -1,0 +1,19 @@
+[workspace]
+resolver = "2"
+members = [
+    "esp-core",
+    "esp-firmware",
+    "esp-tests",
+]
+
+# Default members - exclude esp-firmware from default build/test
+# (esp-firmware requires ESP32 target and cannot be built for host)
+default-members = [
+    "esp-core",
+    "esp-tests",
+]
+
+# Shared dependencies für alle Workspace-Member
+[workspace.dependencies]
+rgb = "0.8.52"
+serde = { version = "1.0.228", default-features = false, features = ["derive"] }

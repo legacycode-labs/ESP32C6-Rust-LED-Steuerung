@@ -1,0 +1,7 @@
+# Clippy Konfiguration (Rust Linter)
+
+# Stack-Size Threshold: Warne bei Funktionen die mehr als 1 KB Stack verwenden
+# Embedded Systeme haben begrenzten Stack (typisch nur wenige KB)
+# 1024 Bytes = 1 KB ist ein konservativer Grenzwert
+# Ausnahmen können mit #[allow(clippy::large_stack_frames)] erlaubt werden
+stack-size-threshold = 1024

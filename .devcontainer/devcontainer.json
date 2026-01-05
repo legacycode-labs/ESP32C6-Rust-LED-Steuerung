@@ -1,0 +1,23 @@
+{
+	"name": "Ubuntu LTS",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+	"privileged": true,
+	"runArgs": [
+		"--device=/dev/bus/usb"
+	],
+	"postCreateCommand": "rustup show",
+	"remoteUser": "vscode",
+	"customizations": {
+		"vscode": {
+			"settings": {},
+			"extensions": [
+				"rust-lang.rust-analyzer",
+				"tamasfe.even-better-toml",
+				"usernamehw.errorlens",
+				"fill-labs.dependi"
+			]
+		}
+	}
+}

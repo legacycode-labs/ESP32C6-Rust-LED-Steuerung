@@ -1,0 +1,40 @@
+# Konfiguration für das RISC-V Target (ESP32-C6)
+[target.riscv32imac-unknown-none-elf]
+# Runner: Wird bei "cargo run" ausgeführt
+# - espflash: ESP32-Flash-Tool
+# - --monitor: Startet Serial Monitor nach dem Flashen
+# - --chip esp32c6: Spezifischer Chip-Typ
+# - --log-format defmt: Dekodiert binäre defmt-Logs
+runner = "espflash flash --monitor --chip esp32c6 --log-format defmt --baud 2000000"
+
+# Umgebungsvariablen für den Build
+[env]
+# defmt Log-Level: trace, debug, info, warn, error
+# "info" zeigt info!(), warn!() und error!() Ausgaben
+DEFMT_LOG = "info"
+
+# Build-Konfiguration
+[build]
+# Compiler-Flags für alle Builds
+rustflags = [
+  # Frame-Pointer erzwingen für bessere Backtraces
+  # Notwendig für esp-backtrace Stack-Traces
+  # Nachteil: Minimal schlechtere Performance und größerer Code
+  "-C",
+  "force-frame-pointers",
+]
+
+# Standard-Target für alle Builds
+# riscv32imac = RISC-V 32-bit mit I/M/A/C Extensions
+# - I: Integer Basis-Instruktionen
+# - M: Multiply/Divide (Hardware-Multiplikation)
+# - A: Atomic Instructions (Thread-Synchronisation)
+# - C: Compressed Instructions (kleinerer Code)
+target = "riscv32imac-unknown-none-elf"
+
+# Unstable Cargo Features (benötigt Nightly ODER rust-toolchain.toml)
+[unstable]
+# build-std: Baut Rust Standard-Library (core) neu
+# Ermöglicht Target-spezifische Optimierungen für kleineren Code
+# Benötigt "rust-src" Component (siehe rust-toolchain.toml)
+build-std = ["core"]
